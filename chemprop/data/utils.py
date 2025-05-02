@@ -9,6 +9,7 @@ import os
 from rdkit import Chem
 import numpy as np
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 from .data import MoleculeDatapoint, MoleculeDataset, make_mols
 from .scaffold import log_scaffold_stats, scaffold_split
@@ -241,7 +242,8 @@ def get_data(path: str,
              store_row: bool = False,
              logger: Logger = None,
              loss_function: str = None,
-             skip_none_targets: bool = False) -> MoleculeDataset:
+             skip_none_targets: bool = False,
+             n_jobs: int = 8) -> MoleculeDataset:
     """
     Gets SMILES and target values from a CSV file.
 
@@ -410,26 +412,24 @@ def get_data(path: str,
             except Exception as e:
                 raise ValueError(f'Failed to load or validate custom bond features: {e}')
 
-        data = MoleculeDataset([
-            MoleculeDatapoint(
-                smiles=smiles,
-                targets=targets,
-                row=all_rows[i] if store_row else None,
-                data_weight=all_weights[i] if data_weights is not None else None,
-                gt_targets=all_gt[i] if gt_targets is not None else None,
-                lt_targets=all_lt[i] if lt_targets is not None else None,
-                features_generator=features_generator,
-                features=all_features[i] if features_data is not None else None,
-                phase_features=all_phase_features[i] if phase_features is not None else None,
-                atom_features=atom_features[i] if atom_features is not None else None,
-                atom_descriptors=atom_descriptors[i] if atom_descriptors is not None else None,
-                bond_features=bond_features[i] if bond_features is not None else None,
-                overwrite_default_atom_features=args.overwrite_default_atom_features if args is not None else False,
-                overwrite_default_bond_features=args.overwrite_default_bond_features if args is not None else False
-            ) for i, (smiles, targets) in tqdm(enumerate(zip(all_smiles, all_targets)),
-                                               total=len(all_smiles))
-        ], augmentors=augmentors)
-
+        data = Parallel(n_jobs=n_jobs, verbose=True, prefer='processes')(delayed(MoleculeDatapoint)(
+            smiles=smiles,
+            targets=targets,
+            row=all_rows[i] if store_row else None,
+            data_weight=all_weights[i] if data_weights is not None else None,
+            gt_targets=all_gt[i] if gt_targets is not None else None,
+            lt_targets=all_lt[i] if lt_targets is not None else None,
+            features_generator=features_generator,
+            features=all_features[i] if features_data is not None else None,
+            phase_features=all_phase_features[i] if phase_features is not None else None,
+            atom_features=atom_features[i] if atom_features is not None else None,
+            atom_descriptors=atom_descriptors[i] if atom_descriptors is not None else None,
+            bond_features=bond_features[i] if bond_features is not None else None,
+            overwrite_default_atom_features=args.overwrite_default_atom_features if args is not None else False,
+            overwrite_default_bond_features=args.overwrite_default_bond_features if args is not None else False
+        ) for i, (smiles, targets) in tqdm(enumerate(zip(all_smiles, all_targets)),
+                                               total=len(all_smiles)))
+    data = MoleculeDataset(data, augmentors=augmentors)
     # Filter out invalid SMILES
     if skip_invalid_smiles:
         original_data_len = len(data)

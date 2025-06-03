@@ -449,6 +449,7 @@ class TrainArgs(CommonArgs):
     Default (False) is to use the checkpoint to freeze all encoders.
     (only relevant for number_of_molecules > 1, where checkpoint model has number_of_molecules = 1)
     """
+    weight_decay: float = 0.0 # Weight decay (L2 regularization) coefficient.
 
     def __init__(self, *args, **kwargs) -> None:
         super(TrainArgs, self).__init__(*args, **kwargs)

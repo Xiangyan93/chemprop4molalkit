@@ -22,7 +22,7 @@ def train(model: MoleculeModel,
           args: TrainArgs,
           n_iter: int = 0,
           logger: logging.Logger = None,
-          writer: SummaryWriter = None) -> int:
+          writer: SummaryWriter = None) -> tuple[int, float]:
     """
     Trains a model for an epoch.
 
@@ -41,6 +41,9 @@ def train(model: MoleculeModel,
 
     model.train()
     loss_sum = iter_count = 0
+    
+    epoch_loss_num = 0.0
+    epoch_loss_den = 0
 
     for batch in tqdm(data_loader, total=len(data_loader), leave=False):
         # Prepare batch
@@ -66,8 +69,9 @@ def train(model: MoleculeModel,
 
         # Run model
         model.zero_grad()
-        preds = model(mol_batch, features_batch, atom_descriptors_batch, atom_features_batch, bond_features_batch)
-
+        preds, features = model(mol_batch, features_batch, atom_descriptors_batch, atom_features_batch, bond_features_batch)
+        previous_features = features
+        
         # Move tensors to correct device
         torch_device = preds.device
         mask = mask.to(torch_device)
@@ -110,6 +114,12 @@ def train(model: MoleculeModel,
             loss = loss_func(preds, targets) * target_weights * data_weights * mask
         loss = loss.sum() / mask.sum()
 
+        batch_loss = loss.item()
+        effective_item = mask.sum().item() # efective item
+        
+        epoch_loss_num += batch_loss * effective_item
+        epoch_loss_den += effective_item
+        
         loss_sum += loss.item()
         iter_count += 1
 
@@ -117,6 +127,9 @@ def train(model: MoleculeModel,
         if args.grad_clip:
             nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         optimizer.step()
+        
+        if hasattr(model, 'gnt') and model.gnt is not None:
+            model.gnt.gen_and_test(features=previous_features)  # activation
 
         if isinstance(scheduler, NoamLR):
             scheduler.step()
@@ -133,6 +146,7 @@ def train(model: MoleculeModel,
 
             lrs_str = ', '.join(f'lr_{i} = {lr:.4e}' for i, lr in enumerate(lrs))
             debug(f'Loss = {loss_avg:.4e}, PNorm = {pnorm:.4f}, GNorm = {gnorm:.4f}, {lrs_str}')
+            print(f'Loss = {loss_avg:.4e}')
 
             if writer is not None:
                 writer.add_scalar('train_loss', loss_avg, n_iter)
@@ -141,4 +155,9 @@ def train(model: MoleculeModel,
                 for i, lr in enumerate(lrs):
                     writer.add_scalar(f'learning_rate_{i}', lr, n_iter)
 
-    return n_iter
+    if epoch_loss_den == 0:
+        raise ValueError("No valid targets in this epoch (all mask==0).")
+    else:
+        epoch_loss_avg = epoch_loss_num / epoch_loss_den
+        
+    return n_iter, epoch_loss_avg

@@ -22,7 +22,7 @@ from chemprop.args import PredictArgs, TrainArgs, FingerprintArgs
 from chemprop.data import StandardScaler, MoleculeDataset, preprocess_smiles_columns, get_task_names
 from chemprop.models import MoleculeModel
 from chemprop.nn_utils import NoamLR
-
+from chemprop.train.AdamGnT import AdamGnT
 
 def makedirs(path: str, isfile: bool = False) -> None:
     """
@@ -475,10 +475,15 @@ def build_optimizer(model: nn.Module, args: TrainArgs) -> Optimizer:
     :return: An initialized Optimizer.
     """
     print(f"Setting weight_decay to: {args.weight_decay}")
-    params = [{"params": model.parameters(), "lr": args.init_lr,
+    
+    if args.use_gnt:
+        print("Using AdamGnT optimizer.")
+        return AdamGnT(model.parameters(), lr=args.init_lr)
+    else:
+        print("Using standard Adam optimizer.")
+        params = [{"params": model.parameters(), "lr": args.init_lr,
                "weight_decay": args.weight_decay}]
-
-    return Adam(params)
+        return Adam(params)
 
 
 def build_lr_scheduler(

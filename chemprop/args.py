@@ -113,6 +113,7 @@ class CommonArgs(Tap):
     """
     Whether to empty all caches before training or predicting. This is necessary if multiple jobs are run within a single script and the atom or bond features change.
     """
+    use_gnt: bool = True
 
     def __init__(self, *args, **kwargs):
         super(CommonArgs, self).__init__(*args, **kwargs)

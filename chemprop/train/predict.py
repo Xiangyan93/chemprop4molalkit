@@ -52,7 +52,7 @@ def predict(
 
         # Make predictions
         with torch.no_grad():
-            batch_preds = model(
+            batch_preds, _ = model(
                 mol_batch,
                 features_batch,
                 atom_descriptors_batch,

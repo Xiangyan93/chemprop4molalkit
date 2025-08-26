@@ -2,9 +2,12 @@ import sys
 import torch
 from math import sqrt
 import torch.nn.functional as F
-from .AdamGnT import AdamGnT
 
-
+try:
+    from .AdamGnT import AdamGnT
+except Exception:
+    AdamGnT = None
+    
 class GnT(object):
     """
     Generate-and-Test algorithm for feed forward neural networks, based on maturity-threshold based replacement
@@ -33,7 +36,11 @@ class GnT(object):
         
         self.opt = opt
         self.opt_type = 'sgd'
-        if isinstance(self.opt, AdamGnT):
+        # 若 AdamGnT 存在且传入的是 AdamGnT
+        if (AdamGnT is not None) and isinstance(self.opt, AdamGnT):
+            self.opt_type = 'adam'
+        # 兼容原生 Adam
+        elif isinstance(self.opt, torch.optim.Adam):
             self.opt_type = 'adam'
 
         """
@@ -235,6 +242,6 @@ class GnT(object):
             sys.exit()
         features_to_replace, num_features_to_replace = self.test_features(features=features)
         self.gen_new_features(features_to_replace, num_features_to_replace)
-        self.update_optim_params(features_to_replace, num_features_to_replace)
+        # self.update_optim_params(features_to_replace, num_features_to_replace)
         self.total_replaced_neurons_this_epoch = sum(num_features_to_replace)
         print(f"[GnT] gen_and_test called. Replaced neurons this batch: {self.total_replaced_neurons_this_epoch}")

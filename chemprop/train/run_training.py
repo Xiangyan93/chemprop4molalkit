@@ -24,7 +24,6 @@ from chemprop.utils import build_optimizer, build_lr_scheduler, load_checkpoint,
     save_checkpoint, save_smiles_splits, load_frzn_model, multitask_mean, load_mpn_model
 
 from .gnt import GnT
-from .AdamGnT import AdamGnT
 import torch.nn.functional as F
 
 import math
@@ -393,7 +392,7 @@ def run_training(args: TrainArgs,
                 hidden_activation=args.activation.lower(),
                 opt=optimizer,
                 decay_rate=0.99,
-                replacement_rate=0,
+                replacement_rate=0.1,
                 init='kaiming',
                 device=args.device,
                 maturity_threshold=20,
@@ -568,7 +567,7 @@ def run_training(args: TrainArgs,
     # save loss
 
     model_loss_df = pd.DataFrame(epoch_losses)
-    model_loss_csv = os.path.join(save_dir, f"epoch_withAdam_train_loss_seed{args.seed}.csv")
+    model_loss_csv = os.path.join(save_dir, f"epoch_adam01_train_loss_seed{args.seed}.csv")
     model_loss_df.to_csv(model_loss_csv, index=False)
 
     return ensemble_scores

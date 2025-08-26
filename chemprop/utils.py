@@ -22,7 +22,6 @@ from chemprop.args import PredictArgs, TrainArgs, FingerprintArgs
 from chemprop.data import StandardScaler, MoleculeDataset, preprocess_smiles_columns, get_task_names
 from chemprop.models import MoleculeModel
 from chemprop.nn_utils import NoamLR
-from chemprop.train.AdamGnT import AdamGnT
 
 def makedirs(path: str, isfile: bool = False) -> None:
     """
@@ -469,22 +468,10 @@ def load_task_names(path: str) -> List[str]:
 def build_optimizer(model: nn.Module, args: TrainArgs) -> Optimizer:
     """
     Builds a PyTorch Optimizer.
-
-    :param model: The model to optimize.
-    :param args: A :class:`~chemprop.args.TrainArgs` object containing optimizer arguments.
-    :return: An initialized Optimizer.
     """
     print(f"Setting weight_decay to: {args.weight_decay}")
-    
-    if args.use_gnt:
-        print("Using AdamGnT optimizer.")
-        return AdamGnT(model.parameters(), lr=args.init_lr)
-    else:
-        print("Using standard Adam optimizer.")
-        params = [{"params": model.parameters(), "lr": args.init_lr,
-               "weight_decay": args.weight_decay}]
-        return Adam(params)
-
+    params = [{"params": model.parameters(), "lr": args.init_lr, "weight_decay": args.weight_decay}]
+    return torch.optim.Adam(params)
 
 def build_lr_scheduler(
     optimizer: Optimizer, args: TrainArgs, total_epochs: List[int] = None

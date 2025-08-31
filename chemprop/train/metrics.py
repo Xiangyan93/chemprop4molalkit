@@ -5,7 +5,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 
-from sklearn.metrics import auc, mean_absolute_error, mean_squared_error, precision_recall_curve, r2_score,\
+from sklearn.metrics import auc, mean_absolute_error, mean_squared_error, root_mean_squared_error,\
+    precision_recall_curve, r2_score,\
     roc_auc_score, accuracy_score, log_loss, f1_score, matthews_corrcoef
 
 
@@ -116,7 +117,7 @@ def rmse(targets: List[float], preds: List[float]) -> float:
     :param preds: A list of predictions.
     :return: The computed rmse.
     """
-    return mean_squared_error(targets, preds, squared=False)
+    return root_mean_squared_error(targets, preds)
 
 
 def bounded_rmse(targets: List[float], preds: List[float], gt_targets: List[bool] = None, lt_targets: List[bool] = None) -> float:

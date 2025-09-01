@@ -474,7 +474,7 @@ def build_optimizer(model: nn.Module, args: TrainArgs) -> Optimizer:
     :param args: A :class:`~chemprop.args.TrainArgs` object containing optimizer arguments.
     :return: An initialized Optimizer.
     """
-    print(f"Setting weight_decay to: {args.weight_decay}")
+    # print(f"Setting weight_decay to: {args.weight_decay}")
     params = [{"params": model.parameters(), "lr": args.init_lr,
                "weight_decay": args.weight_decay}]
 

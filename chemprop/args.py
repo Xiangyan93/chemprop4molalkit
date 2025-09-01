@@ -453,7 +453,7 @@ class TrainArgs(CommonArgs):
     """Weight decay (L2 regularization) coefficient."""
     cbp: bool = False
     """Using continual backpropagation algorithm from paper https://doi.org/10.1038/s41586-024-07711-7"""
-    replacement_rate: float = 0.01
+    replacement_rate: float = 0.00001
     """CBP parameter: Rate at which to replace weights during training."""
     maturity_threshold: int = 100
     """CBP parameter: Threshold for maturity of weights."""

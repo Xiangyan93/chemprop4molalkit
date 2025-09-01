@@ -449,7 +449,18 @@ class TrainArgs(CommonArgs):
     Default (False) is to use the checkpoint to freeze all encoders.
     (only relevant for number_of_molecules > 1, where checkpoint model has number_of_molecules = 1)
     """
-    weight_decay: float = 0.0 # Weight decay (L2 regularization) coefficient.
+    weight_decay: float = 0.0
+    """Weight decay (L2 regularization) coefficient."""
+    cbp: bool = False
+    """Using continual backpropagation algorithm from paper https://doi.org/10.1038/s41586-024-07711-7"""
+    replacement_rate: float = 0.01
+    """CBP parameter: Rate at which to replace weights during training."""
+    maturity_threshold: int = 100
+    """CBP parameter: Threshold for maturity of weights."""
+    reinit_weights: Literal['xavier', 'kaiming', 'lecun', 'default'] = 'xavier'
+    """CBP parameter: Initialization method for reinitializing weights."""
+    decay_rate: float = 0.99
+    """CBP parameter: Decay rate for feature utilization."""
 
     def __init__(self, *args, **kwargs) -> None:
         super(TrainArgs, self).__init__(*args, **kwargs)

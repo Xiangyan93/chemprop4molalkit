@@ -9,6 +9,7 @@ import torch.nn as nn
 from chemprop.args import TrainArgs
 from chemprop.features import BatchMolGraph, get_atom_fdim, get_bond_fdim, mol2graph
 from chemprop.nn_utils import index_select_ND, get_activation_function
+from .cbp_linear import CBPLinear
 
 
 class MPNEncoder(nn.Module):
@@ -64,6 +65,16 @@ class MPNEncoder(nn.Module):
 
         self.W_o = nn.Linear(self.atom_fdim + self.hidden_size, self.hidden_size)
 
+        self.cbp = args.cbp
+        if args.cbp:
+            self.cbp_layer1 = CBPLinear(in_layer=self.W_i, out_layer=self.W_h, replacement_rate=args.replacement_rate,
+                                       maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
+                                       act_type=args.activation.lower(), decay_rate=args.decay_rate)
+            self.cbp_layer2 = CBPLinear(in_layer=self.W_h, out_layer=self.W_o, add_in_dim=133,
+                                        replacement_rate=args.replacement_rate,
+                                        maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
+                                        act_type=args.activation.lower(), decay_rate=args.decay_rate)
+
         # layer after concatenating the descriptors if args.atom_descriptors == descriptors
         if args.atom_descriptors == 'descriptor':
             self.atom_descriptors_size = args.atom_descriptors_size
@@ -116,6 +127,8 @@ class MPNEncoder(nn.Module):
                 rev_message = message[b2revb]  # num_bonds x hidden
                 message = a_message[b2a] - rev_message  # num_bonds x hidden
 
+            if self.cbp and depth == 0:
+                message = self.cbp_layer1(message)
             message = self.W_h(message)
             message = self.act_func(input + message)  # num_bonds x hidden_size
             if self.bn is not None:
@@ -123,11 +136,12 @@ class MPNEncoder(nn.Module):
             if self.ln is not None:
                 message = self.ln(message)
             message = self.dropout_layer(message)  # num_bonds x hidden
-
         a2x = a2a if self.atom_messages else a2b
         nei_a_message = index_select_ND(message, a2x)  # num_atoms x max_num_bonds x hidden
         a_message = nei_a_message.sum(dim=1)  # num_atoms x hidden
         a_input = torch.cat([f_atoms, a_message], dim=1)  # num_atoms x (atom_fdim + hidden)
+        if self.cbp:
+            a_input = self.cbp_layer2(a_input)
         atom_hiddens = self.act_func(self.W_o(a_input))  # num_atoms x hidden
         atom_hiddens = self.dropout_layer(atom_hiddens)  # num_atoms x hidden
 

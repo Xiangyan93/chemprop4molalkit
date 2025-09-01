@@ -243,7 +243,7 @@ def get_data(path: str,
              logger: Logger = None,
              loss_function: str = None,
              skip_none_targets: bool = False,
-             n_jobs: int = 8) -> MoleculeDataset:
+             n_jobs: int = 1) -> MoleculeDataset:
     """
     Gets SMILES and target values from a CSV file.
 

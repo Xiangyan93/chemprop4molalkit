@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from .mpn import MPN
+from .cbp_linear import CBPLinear
 from chemprop.args import TrainArgs
 from chemprop.features import BatchMolGraph
 from chemprop.nn_utils import get_activation_function, initialize_weights
@@ -120,6 +121,29 @@ class MoleculeModel(nn.Module):
                 dropout,
                 nn.Linear(args.ffn_hidden_size, self.output_size),
             ])
+
+        # insert cbp_linear layer
+        if args.cbp:
+            assert args.ffn_num_layers > 1, "CBP requires at least 2 FFN layers"
+            assert len(self.encoder.encoder) == 1, "CBP for multiple molecule input not implemented"
+            ffn_cbp = ffn[:1]
+            cbp_layer = CBPLinear(in_layer=self.encoder.encoder[0].W_o, 
+                                  out_layer=ffn[1], replacement_rate=args.replacement_rate,
+                                  maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
+                                  act_type=args.activation.lower(), decay_rate=args.decay_rate)
+            ffn_cbp.append(cbp_layer)
+            ffn_cbp += ffn[1:4]
+            for i in range(args.ffn_num_layers - 1):
+                cbp_layer = CBPLinear(in_layer=ffn[1 + i * 3], 
+                                    out_layer=ffn[4 + i * 3], 
+                                    replacement_rate=args.replacement_rate, 
+                                    maturity_threshold=args.maturity_threshold, 
+                                    init=args.reinit_weights,
+                                    act_type=args.activation.lower(),
+                                    decay_rate=args.decay_rate)
+                ffn_cbp.append(cbp_layer)
+                ffn_cbp += ffn[4 + 3 * i:7 + 3 * i]
+            ffn = ffn_cbp
 
         # If spectra model, also include spectra activation
         if args.dataset_type == 'spectra':

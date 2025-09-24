@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torch.optim import Adam, Optimizer
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler, ConstantLR
 from tqdm import tqdm
 from scipy.stats.mstats import gmean
 
@@ -493,18 +493,21 @@ def build_lr_scheduler(
     :return: An initialized learning rate scheduler.
     """
     # Learning rate scheduler
-    steps_per_epoch = args.train_data_size // args.batch_size
-    if steps_per_epoch == 0:
-        steps_per_epoch = 1
-    return NoamLR(
-        optimizer=optimizer,
-        warmup_epochs=[args.warmup_epochs],
-        total_epochs=total_epochs or [args.epochs] * args.num_lrs,
-        steps_per_epoch=steps_per_epoch,
-        init_lr=[args.init_lr],
-        max_lr=[args.max_lr],
-        final_lr=[args.final_lr],
-    )
+    if args.const_lr:
+        return ConstantLR(optimizer, factor=1.0, total_iters=1)
+    else:
+        steps_per_epoch = args.train_data_size // args.batch_size
+        if steps_per_epoch == 0:
+            steps_per_epoch = 1
+        return NoamLR(
+            optimizer=optimizer,
+            warmup_epochs=[args.warmup_epochs],
+            total_epochs=total_epochs or [args.epochs] * args.num_lrs,
+            steps_per_epoch=steps_per_epoch,
+            init_lr=[args.init_lr],
+            max_lr=[args.max_lr],
+            final_lr=[args.final_lr],
+        )
 
 
 def create_logger(name: str, save_dir: str = None, quiet: bool = False) -> logging.Logger:

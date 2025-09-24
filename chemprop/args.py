@@ -416,6 +416,8 @@ class TrainArgs(CommonArgs):
     """Maximum learning rate."""
     final_lr: float = 1e-4
     """Final learning rate."""
+    const_lr: bool = False
+    """Whether to use a constant learning rate instead of a warmup period with learning rate decay."""
     grad_clip: float = None
     """Maximum magnitude of gradient during training."""
     class_balance: bool = False

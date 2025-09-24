@@ -118,14 +118,13 @@ def train(model: MoleculeModel,
             nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         optimizer.step()
 
-        if isinstance(scheduler, NoamLR):
-            scheduler.step()
-
+        # if isinstance(scheduler, NoamLR):
+        scheduler.step()
         n_iter += len(batch)
 
         # Log and/or add to tensorboard
         if (n_iter // args.batch_size) % args.log_frequency == 0:
-            lrs = scheduler.get_lr()
+            lrs = scheduler.get_lr() if isinstance(scheduler, NoamLR) else scheduler.get_last_lr()
             pnorm = compute_pnorm(model)
             gnorm = compute_gnorm(model)
             loss_avg = loss_sum / iter_count

@@ -64,7 +64,7 @@ def reset_featurization_parameters(logger: logging.Logger = None) -> None:
         debug = logger.debug
     else:
         debug = print
-    debug('Setting molecule featurization parameters to default.')
+    # debug('Setting molecule featurization parameters to default.')
     global PARAMS
     PARAMS = Featurization_parameters()
 

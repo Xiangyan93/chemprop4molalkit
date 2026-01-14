@@ -34,6 +34,8 @@ setup(
             'chemprop_web=chemprop.web.run:chemprop_web',
             'sklearn_train=chemprop.sklearn_train:sklearn_train',
             'sklearn_predict=chemprop.sklearn_predict:sklearn_predict',
+            'chemprop_cv=chemprop.optuna.cross_validation:chemprop_cv',
+            'chemprop_optuna=chemprop.optuna.optuna:chemprop_optuna'
         ]
     },
     install_requires=[

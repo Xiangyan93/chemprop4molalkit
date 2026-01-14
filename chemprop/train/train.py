@@ -50,13 +50,13 @@ def train(model: MoleculeModel,
             batch.atom_features(), batch.bond_features(), batch.data_weights()
 
         mask = torch.tensor(mask_batch, dtype=torch.bool) # shape(batch, tasks)
-        targets = torch.tensor([[0 if x is None else x for x in tb] for tb in target_batch]) # shape(batch, tasks)
+        targets = torch.tensor([[0 if x is None else x for x in tb] for tb in target_batch], dtype=torch.float) # shape(batch, tasks)
 
         if args.target_weights is not None:
             target_weights = torch.tensor(args.target_weights).unsqueeze(0) # shape(1,tasks)
         else:
             target_weights = torch.ones(targets.shape[1]).unsqueeze(0)
-        data_weights = torch.tensor(data_weights_batch).unsqueeze(1) # shape(batch,1)
+        data_weights = torch.tensor(data_weights_batch, dtype=torch.float).unsqueeze(1) # shape(batch,1)
 
         if args.loss_function == 'bounded_mse':
             lt_target_batch = batch.lt_targets() # shape(batch, tasks)

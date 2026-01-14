@@ -3,6 +3,7 @@ from typing import Callable, List, Union
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
+from rdkit.Avalon import pyAvalonTools
 
 
 Molecule = Union[str, Chem.Mol]
@@ -86,6 +87,45 @@ def morgan_counts_features_generator(mol: Molecule,
     """
     mol = Chem.MolFromSmiles(mol) if type(mol) == str else mol
     features_vec = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=num_bits)
+    features = np.zeros((1,))
+    DataStructs.ConvertToNumpyArray(features_vec, features)
+
+    return features
+
+
+AVALON_NUM_BITS = 512
+
+
+@register_features_generator('avalon')
+def avalon_binary_features_generator(mol: Molecule,
+                                     num_bits: int = AVALON_NUM_BITS) -> np.ndarray:
+    """
+    Generates a binary Avalon fingerprint for a molecule.
+
+    :param mol: A molecule (i.e., either a SMILES or an RDKit molecule).
+    :param num_bits: Number of bits in Avalon fingerprint.
+    :return: A 1D numpy array containing the binary Avalon fingerprint.
+    """
+    mol = Chem.MolFromSmiles(mol) if type(mol) == str else mol
+    features_vec = pyAvalonTools.GetAvalonFP(mol, nBits=num_bits)
+    features = np.zeros((1,))
+    DataStructs.ConvertToNumpyArray(features_vec, features)
+
+    return features
+
+
+@register_features_generator('avalon_count')
+def avalon_counts_features_generator(mol: Molecule,
+                                     num_bits: int = AVALON_NUM_BITS) -> np.ndarray:
+    """
+    Generates a counts-based Avalon fingerprint for a molecule.
+
+    :param mol: A molecule (i.e., either a SMILES or an RDKit molecule).
+    :param num_bits: Number of bits in Avalon fingerprint.
+    :return: A 1D numpy array containing the counts-based Avalon fingerprint.
+    """
+    mol = Chem.MolFromSmiles(mol) if type(mol) == str else mol
+    features_vec = pyAvalonTools.GetAvalonCountFP(mol, nBits=num_bits)
     features = np.zeros((1,))
     DataStructs.ConvertToNumpyArray(features_vec, features)
 

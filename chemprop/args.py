@@ -1007,6 +1007,18 @@ class HyperoptArgs(TrainArgs):
         self.search_parameters = list(search_parameters)
 
 
+class CrossValidationArgs(TrainArgs):
+    cross_validation: Literal["kFold", "Monte-Carlo", "no"] = "no"
+    """The way to split data for cross-validation."""
+    n_splits: int = None
+    """The number of fold for kFold CV."""
+
+
+class OptunaArgs(CrossValidationArgs):
+    n_trials: int = 100
+    """Number of hyperparameter choices to try."""
+
+
 class SklearnTrainArgs(TrainArgs):
     """:class:`SklearnTrainArgs` includes :class:`TrainArgs` along with additional arguments for training a scikit-learn model."""
 

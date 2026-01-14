@@ -12,7 +12,6 @@ from chemprop.features import get_features_generator
 from chemprop.features import BatchMolGraph, MolGraph
 from chemprop.features import is_explicit_h, is_reaction, is_adding_hs, is_mol
 from chemprop.rdkit import make_mol
-from .augmentor import BaseAugmentor
 
 # Cache of graph featurizations
 CACHE_GRAPH = True
@@ -30,12 +29,6 @@ def set_cache_graph(cache_graph: bool) -> None:
     CACHE_GRAPH = cache_graph
 
 
-def empty_cache():
-    r"""Empties the cache of :class:`~chemprop.features.MolGraph` and RDKit molecules."""
-    SMILES_TO_GRAPH.clear()
-    SMILES_TO_MOL.clear()
-
-
 # Cache of RDKit molecules
 CACHE_MOL = True
 SMILES_TO_MOL: Dict[str, Union[Chem.Mol, Tuple[Chem.Mol, Chem.Mol]]] = {}
@@ -50,6 +43,28 @@ def set_cache_mol(cache_mol: bool) -> None:
     r"""Sets whether RDKit molecules will be cached."""
     global CACHE_MOL
     CACHE_MOL = cache_mol
+
+
+CACHE_FEATURES = True
+SMILES_TO_FEATURES: Dict[str, np.ndarray] = {}
+
+
+def cache_features() -> bool:
+    r"""Returns whether features will be cached."""
+    return CACHE_FEATURES
+
+
+def set_cache_features(cache_features: bool) -> None:
+    r"""Sets whether features will be cached."""
+    global CACHE_FEATURES
+    CACHE_FEATURES = cache_features
+
+
+def empty_cache():
+    r"""Empties the cache of :class:`~chemprop.features.MolGraph` and RDKit molecules."""
+    SMILES_TO_GRAPH.clear()
+    SMILES_TO_MOL.clear()
+    SMILES_TO_FEATURES.clear()
 
 
 class MoleculeDatapoint:
@@ -123,19 +138,33 @@ class MoleculeDatapoint:
                 for m, reaction in zip(self.mol, self.is_reaction_list):
                     if not reaction:
                         if m is not None and m.GetNumHeavyAtoms() > 0:
-                            self.features.extend(features_generator(m))
+                            key = f'{fg}-{Chem.MolToSmiles(m)}'
+                            if cache_features() and key in SMILES_TO_FEATURES:
+                                self.features.extend(SMILES_TO_FEATURES[key])
+                            else:
+                                features = features_generator(m)
+                                if cache_features():
+                                    SMILES_TO_FEATURES[key] = features
+                                self.features.extend(features)
+                            # self.features.extend(features_generator(m))
                         # for H2
                         elif m is not None and m.GetNumHeavyAtoms() == 0:
                             # not all features are equally long, so use methane as dummy molecule to determine length
-                            self.features.extend(
-                                np.zeros(len(features_generator(Chem.MolFromSmiles('C')))))
+                            key = f'{fg}-C'
+                            if cache_features() and key in SMILES_TO_FEATURES:
+                                self.features.extend(SMILES_TO_FEATURES[key])
+                            else:
+                                features = features_generator(Chem.MolFromSmiles('C'))
+                                if cache_features():
+                                    SMILES_TO_FEATURES[key] = features
+                                self.features.extend(features)
+                            # self.features.extend(np.zeros(len(features_generator(Chem.MolFromSmiles('C')))))                           
                     else:
                         if m[0] is not None and m[1] is not None and m[0].GetNumHeavyAtoms() > 0:
                             self.features.extend(features_generator(m[0]))
                         elif m[0] is not None and m[1] is not None and m[0].GetNumHeavyAtoms() == 0:
-                            self.features.extend(
-                                np.zeros(len(features_generator(Chem.MolFromSmiles('C')))))
-
+                            self.features.extend(np.zeros(len(features_generator(Chem.MolFromSmiles('C')))))   
+                    
             self.features = np.array(self.features)
 
         # Fix nans in features
@@ -270,7 +299,7 @@ class MoleculeDatapoint:
 class MoleculeDataset(Dataset):
     r"""A :class:`MoleculeDataset` contains a list of :class:`MoleculeDatapoint`\ s with access to their attributes."""
 
-    def __init__(self, data: List[MoleculeDatapoint], augmentors: Dict[BaseAugmentor, int] = None):
+    def __init__(self, data: List[MoleculeDatapoint]):
         r"""
         :param data: A list of :class:`MoleculeDatapoint`\ s.
         """
@@ -278,7 +307,6 @@ class MoleculeDataset(Dataset):
         self._batch_graph = None
         self._batch_graph_aug = None
         self._random = Random()
-        self.augmentors = augmentors
 
     def smiles(self, flatten: bool = False) -> Union[List[str], List[List[str]]]:
         """
@@ -330,28 +358,6 @@ class MoleculeDataset(Dataset):
             self._batch_graph = [BatchMolGraph(
                 [d.mol_graph[i] for d in self.data]) for i in range(len(self.data[0].mol_graph))]
         return self._batch_graph
-
-    def batch_graph_aug(self, fix_seed: bool = True, use_save=True) -> List[BatchMolGraph]:
-        if self._batch_graph_aug is None or not use_save:
-            _batch_graph_aug = []
-            assert self.augmentors is not None
-            for d in self.data:
-                if len(d.mol_graph_aug) == 0 and self.augmentors is not None:
-                    for augmentor, n in self.augmentors.items():
-                        for seed in range(n):
-                            d.mol_graph_aug.append([augmentor(mg, seed=seed) if fix_seed else augmentor(mg) for mg in d.mol_graph])
-                assert len(d.mol_graph_aug) == sum(
-                    [n for augmentor, n in self.augmentors.items()])
-            for i in range(len(self.data[0].mol_graph)):
-                mol_graphs_aug = []
-                for j in range(len(self.data[0].mol_graph_aug)):
-                    mol_graphs_aug += [d.mol_graph_aug[j][i] for d in self.data]
-                _batch_graph_aug.append(BatchMolGraph(mol_graphs_aug))
-            if use_save:
-                self._batch_graph_aug = _batch_graph_aug
-            else:
-                return _batch_graph_aug
-        return self._batch_graph_aug
 
     def features(self) -> List[np.ndarray]:
         """
@@ -427,6 +433,14 @@ class MoleculeDataset(Dataset):
         :return: A list of lists of floats (or None) containing the targets.
         """
         return [d.targets for d in self.data]
+
+    def raw_targets(self) -> List[List[Optional[float]]]:
+        """
+        Returns the targets associated with each molecule.
+
+        :return: A list of lists of floats (or None) containing the targets.
+        """
+        return [d.raw_targets for d in self.data]
 
     @property
     def y(self):
@@ -680,7 +694,7 @@ class MoleculeSampler(Sampler):
         return self.length
 
 
-def construct_molecule_batch(data: List[MoleculeDatapoint], augmentors: Dict[BaseAugmentor, int] = None) -> MoleculeDataset:
+def construct_molecule_batch(data: List[MoleculeDatapoint]) -> MoleculeDataset:
     r"""
     Constructs a :class:`MoleculeDataset` from a list of :class:`MoleculeDatapoint`\ s.
 
@@ -690,7 +704,7 @@ def construct_molecule_batch(data: List[MoleculeDatapoint], augmentors: Dict[Bas
     :param data: A list of :class:`MoleculeDatapoint`\ s.
     :return: A :class:`MoleculeDataset` containing all the :class:`MoleculeDatapoint`\ s.
     """
-    data = MoleculeDataset(data, augmentors=augmentors)
+    data = MoleculeDataset(data)
     data.batch_graph()  # Forces computation and caching of the BatchMolGraph for the molecules
 
     return data
@@ -745,8 +759,7 @@ class MoleculeDataLoader(DataLoader):
             batch_size=self._batch_size,
             sampler=self._sampler,
             num_workers=self._num_workers,
-            collate_fn=lambda data: construct_molecule_batch(
-                data, augmentors=dataset.augmentors),
+            collate_fn=construct_molecule_batch,
             multiprocessing_context=self._context,
             timeout=self._timeout
         )

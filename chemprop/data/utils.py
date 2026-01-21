@@ -8,6 +8,7 @@ import os
 
 from rdkit import Chem
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
@@ -232,6 +233,7 @@ def get_data(path: str,
              args: Union[TrainArgs, PredictArgs] = None,
              data_weights_path: str = None,
              features_path: List[str] = None,
+             features_columns: List[str] = None,
              features_generator: List[str] = None,
              phase_features_path: str = None,
              atom_descriptors_path: str = None,
@@ -276,6 +278,7 @@ def get_data(path: str,
         # Prefer explicit function arguments but default to args if not provided
         smiles_columns = smiles_columns if smiles_columns is not None else args.smiles_columns
         target_columns = target_columns if target_columns is not None else args.target_columns
+        features_columns = features_columns if features_columns is not None else args.features_columns
         ignore_columns = ignore_columns if ignore_columns is not None else args.ignore_columns
         features_path = features_path if features_path is not None else args.features_path
         features_generator = features_generator if features_generator is not None else args.features_generator
@@ -298,6 +301,9 @@ def get_data(path: str,
         for feat_path in features_path:
             features_data.append(load_features(feat_path))  # each is num_data x num_features
         features_data = np.concatenate(features_data, axis=1)
+    elif features_columns is not None:
+        df = pd.read_csv(path)
+        features_data = df[features_columns].values
     else:
         features_data = None
         

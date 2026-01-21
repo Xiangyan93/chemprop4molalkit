@@ -85,6 +85,8 @@ class CommonArgs(Tap):
     """Method(s) of generating additional features."""
     features_path: List[str] = None
     """Path(s) to features to use in FNN (instead of features_generator)."""
+    features_columns: List[str] = None
+    """List of names of the columns containing additional features."""
     phase_features_path: str = None
     """Path to features used to indicate the phase of the data in one-hot vector form. Used in spectra datatype."""
     no_features_scaling: bool = False
@@ -486,7 +488,7 @@ class TrainArgs(CommonArgs):
     @property
     def use_input_features(self) -> bool:
         """Whether the model is using additional molecule-level features."""
-        return self.features_generator is not None or self.features_path is not None or self.phase_features_path is not None
+        return self.features_generator is not None or self.features_path is not None or self.phase_features_path is not None or self.features_columns is not None
 
     @property
     def num_lrs(self) -> int:
@@ -1012,6 +1014,20 @@ class CrossValidationArgs(TrainArgs):
     """The way to split data for cross-validation."""
     n_splits: int = None
     """The number of fold for kFold CV."""
+    
+    def process_args(self) -> None:
+        super(CrossValidationArgs, self).process_args()
+
+        if self.cross_validation not in ["kFold", "Monte-Carlo", "no"]:
+            raise ValueError('cross_validation must be one of "kFold", "Monte-Carlo", or "no".')
+
+        if self.cross_validation == "kFold":
+            if self.n_splits is None:
+                self.n_splits = 5
+        else:
+            self.n_splits = 1
+
+        self.cv_metrics = ['roc_auc' if metric == 'auc' else metric for metric in self.metrics]
 
 
 class OptunaArgs(CrossValidationArgs):

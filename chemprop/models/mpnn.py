@@ -27,6 +27,7 @@ class MPNN:
                                         "wasserstein", "mve", "evidential", "dirichlet"],
                  smiles_columns: List[str] = None, target_columns: List[str] = None,
                  multiclass_num_classes: int = 3,
+                 features_columns: List[str] = None,
                  features_generator=None,
                  no_features_scaling: bool = False,
                  features_only: bool = False,
@@ -76,6 +77,7 @@ class MPNN:
         args.smiles_columns = smiles_columns
         args.target_columns = target_columns
         args.multiclass_num_classes = multiclass_num_classes
+        args.features_columns = features_columns
         args.features_generator = features_generator
         args.no_features_scaling = no_features_scaling
         args.features_only = features_only

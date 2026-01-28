@@ -70,7 +70,7 @@ class MPNEncoder(nn.Module):
             self.cbp_layer1 = CBPLinear(in_layer=self.W_i, out_layer=self.W_h, replacement_rate=args.replacement_rate,
                                        maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
                                        act_type=args.activation.lower(), decay_rate=args.decay_rate)
-            self.cbp_layer2 = CBPLinear(in_layer=self.W_h, out_layer=self.W_o, add_in_dim=133,
+            self.cbp_layer2 = CBPLinear(in_layer=self.W_h, out_layer=self.W_o, add_in_dim=self.atom_fdim,
                                         replacement_rate=args.replacement_rate,
                                         maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
                                         act_type=args.activation.lower(), decay_rate=args.decay_rate)

@@ -1,3 +1,5 @@
+import warnings
+
 import torch
 from torch import nn
 from math import sqrt
@@ -47,9 +49,9 @@ class CBPLinear(nn.Module):
     ):
         super().__init__()
         if type(in_layer) is not nn.Linear:
-            raise Warning("Make sure in_layer is a weight layer")
+            warnings.warn("Make sure in_layer is a weight layer")
         if type(out_layer) is not nn.Linear:
-            raise Warning("Make sure out_layer is a weight layer")
+            warnings.warn("Make sure out_layer is a weight layer")
         """
         Define the hyper-parameters of the algorithm
         """

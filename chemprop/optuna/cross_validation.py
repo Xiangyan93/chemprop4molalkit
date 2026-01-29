@@ -58,6 +58,6 @@ def chemprop_cv(arguments=None):
     if args.separate_test_path is not None:
         dataset_test = get_data(path=args.separate_test_path,
                                 args=args)
-        evaluator.run_external(dataset_test, name='test')
+        evaluator.run_external(dataset_test)
     else:
         evaluator.run_cross_validation()

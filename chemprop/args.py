@@ -405,7 +405,7 @@ class TrainArgs(CommonArgs):
     """Whether to freeze the MPN weights."""
 
     # Training arguments
-    epochs: int = 30
+    epochs: int = 100
     """Number of epochs to run."""
     warmup_epochs: float = 2.0
     """

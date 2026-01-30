@@ -137,7 +137,7 @@ class Evaluator:
         if self.cross_validation == "kFold":
             assert self.n_splits is not None, "n_splits must be specified for nfold cross-validation."
             # repeat cross-validation for num_folds times
-            df_metrics = pd.DataFrame(columns=["metric", "no_targets_columns", "value", "seed", "split"])
+            metrics_parts = []
             for i in range(self.num_folds):
                 kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.seed + i)
                 kf.get_n_splits(self.dataset.data)
@@ -148,7 +148,8 @@ class Evaluator:
                     df_predict.to_csv("%s/kFold_%d-%d_prediction.csv" % (self.save_dir, i, i_fold), index=False)
                     df_["seed"] = self.seed + i
                     df_["split"] = i_fold
-                    df_metrics = pd.concat([df_metrics, df_], ignore_index=True)
+                    metrics_parts.append(df_)
+            df_metrics = pd.concat(metrics_parts, ignore_index=True) if metrics_parts else pd.DataFrame(columns=["metric", "no_targets_columns", "value", "seed", "split"])
             df_metrics.to_csv("%s/kFold_metrics.csv" % self.save_dir, index=False)
             self.log("kFold cross-validation performance:")
             self.log_metrics(df_metrics)
@@ -156,7 +157,7 @@ class Evaluator:
         elif self.cross_validation == "Monte-Carlo":
             assert self.split_type is not None, "split_type must be specified for Monte-Carlo cross-validation."
             assert self.split_sizes is not None, "split_sizes must be specified for Monte-Carlo cross-validation."
-            df_metrics = pd.DataFrame(columns=["metric", "no_targets_columns", "value", "seed"])
+            metrics_parts = []
             for i in range(self.num_folds):
                 if len(self.split_sizes) == 2:
                     dataset_train, dataset_test = dataset_split(
@@ -176,7 +177,8 @@ class Evaluator:
                 df_predict, df_ = self.evaluate_train_test(dataset_train, dataset_test)
                 df_predict.to_csv("%s/test_%d_prediction.csv" % (self.save_dir, i), index=False)
                 df_["seed"] = self.seed + i
-                df_metrics = pd.concat([df_metrics, df_], ignore_index=True)
+                metrics_parts.append(df_)
+            df_metrics = pd.concat(metrics_parts, ignore_index=True) if metrics_parts else pd.DataFrame(columns=["metric", "no_targets_columns", "value", "seed"])
             df_metrics.to_csv("%s/Monte-Carlo_metrics.csv" % self.save_dir, index=False)
             self.log("Monte-Carlo cross-validation performance:")
             self.log_metrics(df_metrics)

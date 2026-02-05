@@ -521,7 +521,8 @@ class MoleculeDataset(Dataset):
             if len(self.data) > 0 and self.data[0].bond_features is not None else None
 
     def normalize_features(self, scaler: StandardScaler = None, replace_nan_token: int = 0,
-                           scale_atom_descriptors: bool = False, scale_bond_features: bool = False) -> StandardScaler:
+                           scale_atom_descriptors: bool = False, scale_bond_features: bool = False,
+                           no_scale_indices: List[int] = None) -> StandardScaler:
         """
         Normalizes the features of the dataset using a :class:`~chemprop.data.StandardScaler`.
 
@@ -538,6 +539,7 @@ class MoleculeDataset(Dataset):
         :param replace_nan_token: A token to use to replace NaN entries in the features.
         :param scale_atom_descriptors: If the features that need to be scaled are atom features rather than molecule.
         :param scale_bond_features: If the features that need to be scaled are bond descriptors rather than molecule.
+        :param no_scale_indices: A list of feature indices that should not be scaled (identity transform).
         :return: A fitted :class:`~chemprop.data.StandardScaler`. If a :class:`~chemprop.data.StandardScaler`
                  is provided as a parameter, this is the same :class:`~chemprop.data.StandardScaler`. Otherwise,
                  this is a new :class:`~chemprop.data.StandardScaler` that has been fit on this dataset.
@@ -558,6 +560,10 @@ class MoleculeDataset(Dataset):
                 features = np.vstack([d.raw_features for d in self.data])
             scaler = StandardScaler(replace_nan_token=replace_nan_token)
             scaler.fit(features)
+
+            if no_scale_indices is not None:
+                scaler.means[no_scale_indices] = 0
+                scaler.stds[no_scale_indices] = 1
 
         if scale_atom_descriptors and not self.data[0].atom_descriptors is None:
             for d in self.data:

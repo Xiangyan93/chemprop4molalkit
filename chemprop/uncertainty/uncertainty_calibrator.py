@@ -158,7 +158,7 @@ class ZScalingCalibrator(UncertaintyCalibrator):
                 return nll.sum()
 
             initial_guess = np.std(task_zscore)
-            sol = fmin(objective, initial_guess)
+            sol = fmin(objective, initial_guess).item()
 
             if self.regression_calibrator_metric == "stdev":
                 self.scaling[i] = sol
@@ -256,7 +256,7 @@ class TScalingCalibrator(UncertaintyCalibrator):
                 return nll
 
             initial_guess = np.std(task_tscore)
-            stdev_scaling = fmin(objective, initial_guess)
+            stdev_scaling = fmin(objective, initial_guess).item()
             if self.regression_calibrator_metric == "stdev":
                 self.scaling[i] = stdev_scaling
             else:  # interval

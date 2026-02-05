@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from chemprop.data import get_class_sizes, MoleculeDataLoader, get_task_names
+from chemprop.data.utils import get_no_scale_indices
 from chemprop.utils import build_optimizer, build_lr_scheduler, makedirs, load_mpn_model, save_checkpoint, load_checkpoint
 from chemprop.nn_utils import param_count, param_count_all
 from chemprop.models import MoleculeModel
@@ -148,8 +149,9 @@ class MPNN:
             args.train_class_sizes = train_class_sizes
 
         if args.features_scaling:
+            no_scale_indices = get_no_scale_indices(args, train_data)
             self.features_scaler = train_data.normalize_features(
-                replace_nan_token=0)
+                replace_nan_token=0, no_scale_indices=no_scale_indices)
         else:
             self.features_scaler = None
 

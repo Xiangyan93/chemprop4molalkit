@@ -18,6 +18,7 @@ from chemprop.spectra_utils import normalize_spectra, load_phase_mask
 from chemprop.args import TrainArgs
 from chemprop.constants import MODEL_FILE_NAME
 from chemprop.data import get_class_sizes, get_data, MoleculeDataLoader, MoleculeDataset, set_cache_graph, split_data
+from chemprop.data.utils import get_no_scale_indices
 from chemprop.models import MoleculeModel
 from chemprop.nn_utils import param_count, param_count_all
 from chemprop.utils import build_optimizer, build_lr_scheduler, load_checkpoint, makedirs, \
@@ -121,7 +122,8 @@ def run_training(args: TrainArgs,
         )
 
     if args.features_scaling:
-        features_scaler = train_data.normalize_features(replace_nan_token=0)
+        no_scale_indices = get_no_scale_indices(args, train_data)
+        features_scaler = train_data.normalize_features(replace_nan_token=0, no_scale_indices=no_scale_indices)
         val_data.normalize_features(features_scaler)
         test_data.normalize_features(features_scaler)
     else:

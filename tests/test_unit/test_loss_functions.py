@@ -144,7 +144,7 @@ def test_mve(preds, targets, likelihood):
     Tests the normal_mve loss function
     """
     nll_calc = normal_mve(preds, targets)
-    likelihood_calc = np.exp(-1 * nll_calc)
+    likelihood_calc = np.exp(-1 * nll_calc.detach().numpy())
     np.testing.assert_array_almost_equal(likelihood, likelihood_calc, decimal=4)
 
 

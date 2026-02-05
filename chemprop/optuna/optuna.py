@@ -36,12 +36,14 @@ def chemprop_optuna(arguments=None):
             'weight_decay': trial.suggest_categorical('weight_decay', [0.0, 1e-5, 1e-4, 1e-3]),
             'batch_size': trial.suggest_categorical('batch_size', [16, 32, 64, 128, 256]),
             'epochs': trial.suggest_categorical('epochs', [10, 30, 50, 100, 200]), # 10, 30, 50, 100, 200
-            'set1': trial.suggest_categorical('set1', [(True, False), (False, True), (False, False)]),
-            # 'atom_messages': trial.suggest_categorical('atom_messages', [True, False]),
-            # 'undirected': trial.suggest_categorical('undirected', [True, False])
+            'set1': trial.suggest_categorical('set1', ['atom_messages', 'undirected', 'neither']),
         }
-            # 'ensemble_size': trial.suggest_categorical('ensemble_size', [1, 4, 16]),
-        atom_messages, undirected = params['set1']
+        set1_map = {
+            'atom_messages': (True, False),
+            'undirected': (False, True),
+            'neither': (False, False),
+        }
+        atom_messages, undirected = set1_map[params['set1']]
         model = MPNN(save_dir='%s/trial-%d' % (args.save_dir, trial.number),
                     data_path=args.data_path,
                     dataset_type=args.dataset_type,

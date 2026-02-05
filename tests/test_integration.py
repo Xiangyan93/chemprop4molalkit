@@ -1047,7 +1047,7 @@ class ChempropTests(TestCase):
         [],
     ),
     (
-        20.50925,
+        11.391167,
         'dropout',
         'zscaling',
         'ence',

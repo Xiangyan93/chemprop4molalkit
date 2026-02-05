@@ -195,10 +195,6 @@ class CommonArgs(Tap):
             checkpoint_dir=self.checkpoint_dir,
         )
 
-        # Validate features
-        if self.features_generator is not None and 'rdkit_2d_normalized' in self.features_generator and self.features_scaling:
-            raise ValueError('When using rdkit_2d_normalized features, --no_features_scaling must be specified.')
-
         # Validate atom descriptors
         if (self.atom_descriptors is None) != (self.atom_descriptors_path is None):
             raise ValueError('If atom_descriptors is specified, then an atom_descriptors_path must be provided '

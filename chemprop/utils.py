@@ -208,7 +208,7 @@ def load_frzn_model(
     debug = logger.debug if logger is not None else print
 
     loaded_mpnn_model = torch.load(
-        path, map_location=lambda storage, loc: storage)
+        path, map_location=lambda storage, loc: storage, weights_only=False)
     loaded_state_dict = loaded_mpnn_model["state_dict"]
     loaded_args = loaded_mpnn_model["args"]
 
@@ -379,7 +379,7 @@ def load_mpn_model(model: MoleculeModel,
                    path: str, current_args: Namespace = None,
                    logger: logging.Logger = None,) -> MoleculeModel:
     loaded_state_dict = torch.load(
-        path, map_location=lambda storage, loc: storage)
+        path, map_location=lambda storage, loc: storage, weights_only=False)
     model_state_dict = model.encoder.state_dict()
 
     for i in range(current_args.number_of_molecules):
@@ -403,7 +403,7 @@ def load_scalers(
     :return: A tuple with the data :class:`~chemprop.data.scaler.StandardScaler`
              and features :class:`~chemprop.data.scaler.StandardScaler`.
     """
-    state = torch.load(path, map_location=lambda storage, loc: storage)
+    state = torch.load(path, map_location=lambda storage, loc: storage, weights_only=False)
 
     if state["data_scaler"] is not None:
         scaler = StandardScaler(
@@ -449,7 +449,7 @@ def load_args(path: str) -> TrainArgs:
     args = TrainArgs()
     args.from_dict(
         vars(torch.load(path, map_location=lambda storage,
-             loc: storage)["args"]),
+             loc: storage, weights_only=False)["args"]),
         skip_unsettable=True,
     )
 

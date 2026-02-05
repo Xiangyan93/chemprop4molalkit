@@ -15,7 +15,7 @@ from joblib import Parallel, delayed
 from .data import MoleculeDatapoint, MoleculeDataset, make_mols
 from .scaffold import log_scaffold_stats, scaffold_split
 from chemprop.args import PredictArgs, TrainArgs
-from chemprop.features import load_features, load_valid_atom_or_bond_features, is_mol
+from chemprop.features import load_features, load_valid_atom_or_bond_features, is_mol, get_features_generator
 
 def get_header(path: str) -> List[str]:
     """
@@ -774,3 +774,39 @@ def validate_data(data_path: str) -> Set[str]:
             errors.add('Found a target which is not a number.')
 
     return errors
+
+
+def get_no_scale_indices(args: TrainArgs, data: MoleculeDataset) -> List[int]:
+    """
+    Compute feature indices that should not be scaled because they come from
+    rdkit_2d_normalized (which is already pre-normalized).
+
+    Features are concatenated in order: pre-loaded features, then generator
+    features (in the order of --features_generator). This function identifies
+    the index range belonging to rdkit_2d_normalized generators.
+
+    :param args: A :class:`~chemprop.args.TrainArgs` object.
+    :param data: A :class:`~chemprop.data.MoleculeDataset`.
+    :return: A list of feature indices to skip during scaling, or None.
+    """
+    if args.features_generator is None or 'rdkit_2d_normalized' not in args.features_generator:
+        return None
+
+    dummy_mol = Chem.MolFromSmiles('C')
+    total_size = data.features_size()
+
+    generator_sizes = []
+    for fg in args.features_generator:
+        fg_func = get_features_generator(fg)
+        generator_sizes.append(len(fg_func(dummy_mol)))
+
+    pre_loaded_size = total_size - sum(generator_sizes)
+
+    offset = pre_loaded_size
+    no_scale = []
+    for fg, size in zip(args.features_generator, generator_sizes):
+        if fg == 'rdkit_2d_normalized':
+            no_scale.extend(range(offset, offset + size))
+        offset += size
+
+    return no_scale if no_scale else None

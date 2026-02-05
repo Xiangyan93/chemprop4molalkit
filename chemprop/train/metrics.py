@@ -142,7 +142,7 @@ def bounded_rmse(targets: List[float], preds: List[float], gt_targets: List[bool
         targets,
         preds,
     )
-    return mean_squared_error(targets, preds, squared=False)
+    return root_mean_squared_error(targets, preds)
 
 
 def bounded_mse(targets: List[float], preds: List[float], gt_targets: List[bool] = None, lt_targets: List[bool] = None) -> float:
@@ -167,7 +167,7 @@ def bounded_mse(targets: List[float], preds: List[float], gt_targets: List[bool]
         targets,
         preds,
     )
-    return mean_squared_error(targets, preds, squared=True)
+    return mean_squared_error(targets, preds)
 
 
 def bounded_mae(targets: List[float], preds: List[float], gt_targets: List[bool] = None, lt_targets: List[bool] = None) -> float:

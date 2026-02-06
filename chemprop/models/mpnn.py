@@ -320,9 +320,12 @@ class MPNN:
 
     def predict_uncertainty(self, pred_data):
         if self.chemprop_predict_args.uncertainty_method is None and self.chemprop_train_args.dataset_type == "classification":
-            preds = np.array(self.predict(pred_data)[0])
-            preds = np.array([preds, 1-preds]).T
-            return (0.25 - np.var(preds, axis=1)) * 4
+            preds = np.array(self.predict(pred_data)[0])  # (n_samples, n_tasks)
+            preds = np.clip(preds, 1e-10, 1 - 1e-10)
+            # Binary entropy per task: -p*log(p) - (1-p)*log(1-p)
+            task_entropies = -(preds * np.log(preds) + (1 - preds) * np.log(1 - preds))
+            # Average across tasks for multi-task; collapses to single task entropy for n_tasks=1
+            return np.mean(task_entropies, axis=-1)  # (n_samples,)
         else:
             return self.predict(pred_data)[1]
 

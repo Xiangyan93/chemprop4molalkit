@@ -28,14 +28,14 @@ def chemprop_optuna(arguments=None):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         params = {
-            'depth': trial.suggest_int('depth', 2, 6, step=1),
+            'depth': trial.suggest_int('depth', 2, 10, step=1),
             'hidden_size': trial.suggest_int('hidden_size', 300, 2400, step=100),
             'ffn_num_layers': trial.suggest_int('ffn_num_layers', 1, 6, step=1),
             'ffn_hidden_size': trial.suggest_int('ffn_hidden_size', 300, 2400, step=100),
             'dropout': trial.suggest_float('dropout', 0.0, 0.4, step=0.05),
             'weight_decay': trial.suggest_categorical('weight_decay', [0.0, 1e-5, 1e-4, 1e-3]),
             'batch_size': trial.suggest_categorical('batch_size', [16, 32, 64, 128, 256]),
-            'epochs': trial.suggest_categorical('epochs', [10, 30, 50, 100, 200]), # 10, 30, 50, 100, 200
+            'epochs': trial.suggest_categorical('epochs', [10, 30, 50, 100, 200, 400, 800]), # 10, 30, 50, 100, 200
             'set1': trial.suggest_categorical('set1', ['atom_messages', 'undirected', 'neither']),
         }
         set1_map = {

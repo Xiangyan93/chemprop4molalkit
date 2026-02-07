@@ -613,3 +613,202 @@ class TestMultitaskMissingLabels:
         # Some folds may have 0 or 1 valid sample for task 2
         # The weighted mean should handle this gracefully
         assert "n_samples" in df_metrics.columns
+
+
+class TestMPNNCBP:
+    """Tests for MPNN with Continual Backpropagation (CBP)."""
+
+    def test_mpnn_cbp_regression(self, tmp_dir, regression_csv):
+        """Test MPNN + CBP on regression."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mpnn_cbp_reg")
+        chemprop_cv([
+            "--data_path", regression_csv,
+            "--dataset_type", "regression",
+            "--metric", "rmse",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--hidden_size", "10",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--depth", "2",
+            "--cbp",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+    def test_mpnn_cbp_classification(self, tmp_dir, binary_csv):
+        """Test MPNN + CBP on binary classification."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mpnn_cbp_cls")
+        chemprop_cv([
+            "--data_path", binary_csv,
+            "--dataset_type", "classification",
+            "--metric", "auc",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--hidden_size", "10",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--depth", "2",
+            "--cbp",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+
+class TestMLP:
+    """Tests for MLP-only mode (features_only) without message passing."""
+
+    def test_mlp_regression(self, tmp_dir, regression_csv):
+        """Test MLP (features_only + morgan) on regression."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mlp_reg")
+        chemprop_cv([
+            "--data_path", regression_csv,
+            "--dataset_type", "regression",
+            "--metric", "rmse",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--features_generator", "morgan",
+            "--features_only",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+    def test_mlp_classification(self, tmp_dir, binary_csv):
+        """Test MLP (features_only + morgan) on binary classification."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mlp_cls")
+        chemprop_cv([
+            "--data_path", binary_csv,
+            "--dataset_type", "classification",
+            "--metric", "auc",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--features_generator", "morgan",
+            "--features_only",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+
+class TestMLPCBP:
+    """Tests for MLP-only mode with Continual Backpropagation (CBP)."""
+
+    def test_mlp_cbp_regression(self, tmp_dir, regression_csv):
+        """Test MLP + CBP on regression (features_only, no MPN)."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mlp_cbp_reg")
+        chemprop_cv([
+            "--data_path", regression_csv,
+            "--dataset_type", "regression",
+            "--metric", "rmse",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--features_generator", "morgan",
+            "--features_only",
+            "--cbp",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+    def test_mlp_cbp_classification(self, tmp_dir, binary_csv):
+        """Test MLP + CBP on binary classification (features_only, no MPN)."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mlp_cbp_cls")
+        chemprop_cv([
+            "--data_path", binary_csv,
+            "--dataset_type", "classification",
+            "--metric", "auc",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "2",
+            "--features_generator", "morgan",
+            "--features_only",
+            "--cbp",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))
+
+    def test_mlp_cbp_3layer_regression(self, tmp_dir, regression_csv):
+        """Test MLP + CBP with 3 FFN layers to verify multiple CBP layers work."""
+        from chemprop.optuna.cross_validation import chemprop_cv
+
+        save_dir = os.path.join(tmp_dir, "mlp_cbp_3l")
+        chemprop_cv([
+            "--data_path", regression_csv,
+            "--dataset_type", "regression",
+            "--metric", "rmse",
+            "--cross_validation", "kFold",
+            "--n_splits", "2",
+            "--num_folds", "1",
+            "--ensemble_size", "1",
+            "--num_workers", "0",
+            "--save_dir", save_dir,
+            "--epochs", "3",
+            "--ffn_hidden_size", "10",
+            "--ffn_num_layers", "3",
+            "--features_generator", "morgan",
+            "--features_only",
+            "--cbp",
+            "--quiet",
+            "--empty_cache",
+        ])
+
+        assert os.path.exists(os.path.join(save_dir, "kFold_metrics.csv"))

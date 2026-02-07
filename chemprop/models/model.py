@@ -125,19 +125,23 @@ class MoleculeModel(nn.Module):
         # insert cbp_linear layer
         if args.cbp:
             assert args.ffn_num_layers > 1, "CBP requires at least 2 FFN layers"
-            assert len(self.encoder.encoder) == 1, "CBP for multiple molecule input not implemented"
-            ffn_cbp = ffn[:1]
-            cbp_layer = CBPLinear(in_layer=self.encoder.encoder[0].W_o, 
-                                  out_layer=ffn[1], replacement_rate=args.replacement_rate,
-                                  maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
-                                  act_type=args.activation.lower(), decay_rate=args.decay_rate)
-            ffn_cbp.append(cbp_layer)
-            ffn_cbp += ffn[1:4]
+            if args.features_only:
+                # features_only: no MPN encoder, only insert CBP between FFN layers
+                ffn_cbp = ffn[:4]
+            else:
+                assert len(self.encoder.encoder) == 1, "CBP for multiple molecule input not implemented"
+                ffn_cbp = ffn[:1]
+                cbp_layer = CBPLinear(in_layer=self.encoder.encoder[0].W_o,
+                                      out_layer=ffn[1], replacement_rate=args.replacement_rate,
+                                      maturity_threshold=args.maturity_threshold, init=args.reinit_weights,
+                                      act_type=args.activation.lower(), decay_rate=args.decay_rate)
+                ffn_cbp.append(cbp_layer)
+                ffn_cbp += ffn[1:4]
             for i in range(args.ffn_num_layers - 1):
-                cbp_layer = CBPLinear(in_layer=ffn[1 + i * 3], 
-                                    out_layer=ffn[4 + i * 3], 
-                                    replacement_rate=args.replacement_rate, 
-                                    maturity_threshold=args.maturity_threshold, 
+                cbp_layer = CBPLinear(in_layer=ffn[1 + i * 3],
+                                    out_layer=ffn[4 + i * 3],
+                                    replacement_rate=args.replacement_rate,
+                                    maturity_threshold=args.maturity_threshold,
                                     init=args.reinit_weights,
                                     act_type=args.activation.lower(),
                                     decay_rate=args.decay_rate)

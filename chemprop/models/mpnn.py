@@ -327,7 +327,8 @@ class MPNN:
             # Average across tasks for multi-task; collapses to single task entropy for n_tasks=1
             return np.mean(task_entropies, axis=-1)  # (n_samples,)
         else:
-            return self.predict(pred_data)[1]
+            unc = np.asarray(self.predict(pred_data)[1])
+            return np.mean(unc, axis=-1) if unc.ndim > 1 else unc
 
     def predict_value(self, pred_data):
         return self.predict(pred_data)[0]
